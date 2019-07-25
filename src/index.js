@@ -133,7 +133,7 @@ const displayQuotes = quote => {
   // create li element
   const li = document.createElement("li");
   li.className = "quote-card";
-  li.dataset.id = quote.id;
+  li.dataset.id = parseInt(quote.id, 10); // this was preveiously a string!!!
 
   // create blockquote element
   const blockQuote = document.createElement("blockquote");
@@ -198,7 +198,7 @@ const editFormCreator = id => {
 
   const editSubmit = document.createElement("button");
   editSubmit.innerText = "Update Quote!";
-  editSubmit.className = "btn btn-light";
+  editSubmit.className = "btn btn-dark";
   editSubmit.dataset.id = id;
 
   editSubmit.addEventListener("click", editQuoteContent);
@@ -213,6 +213,7 @@ const sortButton = () => {
   const select = document.createElement("select");
 
   select.id = "sort-items";
+  select.className = "custom-select"
   headerContainer.appendChild(select);
 
   for (var i = 0; i < options.length; i++) {
@@ -224,7 +225,7 @@ const sortButton = () => {
 };
 
 const sortItems = e => {
-  const sortValue = e.target.value;
+  const sortValue = selectSorter.value;
   const sortQuery = "&_sort=author";
   const sortByQuery = { Ascending: "&_order=asc", Descending: "&_order=desc" };
   //   console.log(quoteLikeURL + sortQuery + sortByQuery[sortValue]);
@@ -234,13 +235,11 @@ const sortItems = e => {
     .then(quotes => quotes.forEach(quote => displayQuotes(quote)));
 };
 
-
 showQuotes();
 sortButton();
 
 createForm.addEventListener("submit", createQuote);
+
 const selectSorter = document.querySelector("#sort-items");
-
 selectSorter.addEventListener("change", sortItems);
-createButton.addEventListener("click", sortItems);
-
+// createButton.addEventListener("click", sortItems);
