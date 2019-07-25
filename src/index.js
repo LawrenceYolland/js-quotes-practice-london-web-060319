@@ -1,14 +1,20 @@
 // It might be a good idea to add event listener to make sure this file
 // only runs after the DOM has finshed loading.
 
-const quoteUrl = "http://localhost:3000/quotes";
-const likeUrl = "http://localhost:3000/likes";
+const quoteURL = "http://localhost:3000/quotes";
+const quoteLikeURL = "http://localhost:3000/quotes?_embed=likes";
+const likeURL = "http://localhost:3000/likes";
+
 const quoteList = document.querySelector("#quote-list");
 const createForm = document.querySelector("#new-quote-form");
 const createButton = document.querySelector("#create-button");
 
 const fetchData = () => {
-  return fetch(quoteUrl).then(resp => resp.json());
+  return fetch(quoteLikeURL).then(resp => resp.json());
+};
+
+const fetchLikes = () => {
+  return fetch(likeURL).then(resp => resp.json());
 };
 
 const showQuotes = () => {
@@ -19,9 +25,9 @@ const showQuotes = () => {
 
 const deleteQuote = e => {
   const id = e.target.dataset.id;
-  fetch(quoteUrl + `/${id}`, { method: "DELETE" });
+  fetch(quoteURL + `/${id}`, { method: "DELETE" });
   deleteQuoteItem(id);
-  getLikes(id);
+  fetchLikes().then(likes => removeLikes(likes, id));
 };
 
 const deleteQuoteItem = id => {
@@ -29,18 +35,35 @@ const deleteQuoteItem = id => {
   quoteList.removeChild(li);
 };
 
-const getLikes = id => {
-  return fetch(likeUrl)
-    .then(resp => resp.json())
-    .then(likes => removeLikes(likes));
-};
-
 const removeLikes = (likes, id) => {
   const likesArray = likes.filter(like => like.quoteId === id);
-  console.log(likesArray);
   likesArray.forEach(like =>
-    fetch(likeUrl + `/${like.id}`, { method: "DELETE" })
+    fetch(quoteURL + `/${like.id}`, { method: "DELETE" })
   );
+};
+
+const likeQuote = e => {
+  const id = e.target.dataset.id;
+  const data = {
+    quoteId: parseInt(id, 10),
+    createdAt: +Date.now()
+  };
+  const postData = {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  };
+  fetch(likeURL, postData)
+    .then(resp => resp.json())
+    .then(likes => updateLikes(likes));
+};
+
+const updateLikes = likes => {
+  const id = parseInt(likes.quoteId, 10);
+  const span = document
+    .querySelector(`li[data-id='${id}']`)
+    .querySelector("span");
+  span.innerText++;
 };
 
 const createQuote = e => {
@@ -57,48 +80,25 @@ const createQuote = e => {
     body: JSON.stringify(data)
   };
   // send new quote to quote builder function
-  fetch(quoteUrl, postData)
+  fetch(quoteURL, postData)
     .then(resp => resp.json())
     .then(quote => displayQuotes(quote));
-  // clear enetered text from form after submission
+  // clear entered text from form after submission
   newQuote.value = "";
   author.value = "";
 };
 
-const likeQuote = e => {
+const showHideEditForm = e => {
   const id = e.target.dataset.id;
-  const data = {
-    quoteId: parseInt(id, 10),
-    createdAt: +Date.now()
-  };
-  const postData = {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
-  };
-  fetch(likeUrl, postData)
-    .then(resp => resp.json())
-    .then(likes => updateLikes(likes));
-};
-
-const updateLikes = likes => {
-  const id = parseInt(likes.quoteId, 10);
-  const span = document
-    .querySelector(`li[data-id='${id}']`)
-    .querySelector("span");
-  span.innerText++;
-};
-
-const showEditForm = e => {
-  const id = e.target.dataset.id;
-  editFormCreator(id);
+  const form = document.querySelector(`form[data-id='${id}']`);
+  !form ? editFormCreator(id) : form.parentElement.removeChild(form);
 };
 
 const editQuoteContent = e => {
   e.preventDefault();
   const id = e.target.dataset.id;
   const li = document.querySelector(`li[data-id='${id}']`);
-  const form = li.querySelector(".edit-form")
+  const form = li.querySelector(".edit-form");
   const inputAuthor = document.querySelector(`.edit-author`);
   const inputQuote = document.querySelector(`.edit-quote`);
 
@@ -123,10 +123,10 @@ const editQuoteContent = e => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   };
-  fetch(quoteUrl + `/${id}`, patchData);
+  fetch(quoteURL + `/${id}`, patchData);
   currentAuthor.innerText = newAuthor;
   currentQuote.innerText = newQuote;
-  li.removeChild(form)
+  li.removeChild(form);
 };
 
 const displayQuotes = quote => {
@@ -158,7 +158,7 @@ const displayQuotes = quote => {
   likeButton.innerText = "Likes: ";
 
   const span = document.createElement("span");
-  span.innerText = "0";
+  span.innerText = quote.likes.length;
   likeButton.append(span);
   likeButton.dataset.id = quote.id;
   likeButton.addEventListener("click", likeQuote);
@@ -174,7 +174,7 @@ const displayQuotes = quote => {
   editButton.className = "btn btn-primary"; // blue
   editButton.innerText = "Edit";
   editButton.dataset.id = quote.id;
-  editButton.addEventListener("click", showEditForm);
+  editButton.addEventListener("click", showHideEditForm);
 
   blockQuote.append(p, footer, br, likeButton, deleteButton, editButton);
   li.append(blockQuote);
