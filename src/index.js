@@ -207,5 +207,40 @@ const editFormCreator = id => {
   li.append(editForm);
 };
 
+const sortButton = () => {
+  const headerContainer = document.querySelector("#header-container");
+  const options = ["Ascending", "Descending"];
+  const select = document.createElement("select");
+
+  select.id = "sort-items";
+  headerContainer.appendChild(select);
+
+  for (var i = 0; i < options.length; i++) {
+    let opt = document.createElement("option");
+    opt.value = options[i];
+    opt.innerText = options[i];
+    select.appendChild(opt);
+  }
+};
+
+const sortItems = e => {
+  const sortValue = e.target.value;
+  const sortQuery = "&_sort=author";
+  const sortByQuery = { Ascending: "&_order=asc", Descending: "&_order=desc" };
+  //   console.log(quoteLikeURL + sortQuery + sortByQuery[sortValue]);
+  quoteList.innerHTML = "";
+  return fetch(quoteLikeURL + sortQuery + sortByQuery[sortValue])
+    .then(resp => resp.json())
+    .then(quotes => quotes.forEach(quote => displayQuotes(quote)));
+};
+
+
 showQuotes();
+sortButton();
+
 createForm.addEventListener("submit", createQuote);
+const selectSorter = document.querySelector("#sort-items");
+
+selectSorter.addEventListener("change", sortItems);
+createButton.addEventListener("click", sortItems);
+
