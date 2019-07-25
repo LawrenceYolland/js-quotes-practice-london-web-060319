@@ -97,6 +97,8 @@ const showEditForm = e => {
 const editQuoteContent = e => {
   e.preventDefault();
   const id = e.target.dataset.id;
+  const li = document.querySelector(`li[data-id='${id}']`);
+  const form = li.querySelector(".edit-form")
   const inputAuthor = document.querySelector(`.edit-author`);
   const inputQuote = document.querySelector(`.edit-quote`);
 
@@ -124,6 +126,7 @@ const editQuoteContent = e => {
   fetch(quoteUrl + `/${id}`, patchData);
   currentAuthor.innerText = newAuthor;
   currentQuote.innerText = newQuote;
+  li.removeChild(form)
 };
 
 const displayQuotes = quote => {
